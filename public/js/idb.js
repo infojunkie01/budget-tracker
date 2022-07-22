@@ -10,7 +10,7 @@ request.onsuccess = function(event) {
     db = event.target.result;
 
     if (navigator.onLine) {
-        //uploadTransaction();
+        uploadTransaction();
     }
 }
 
@@ -24,6 +24,41 @@ function saveRecord(record) {
     const transactionObjectStore = transaction.objectStore('new_transaction')
 
     transactionObjectStore.add(record);
+}
+
+function uploadTransaction() {
+    const transaction = db.transaction(['new_transaction'], 'readwrite');
+
+    const newTransactionObjectStore = transaction.objectStore('new_transaction');
+
+    const getAll = newTransactionObjectStore.getAll();
+
+    getAll.onsuccess = function() {
+        if (getAll.results.length > 0) {
+            fetch('/api/transactions', {
+                method: 'POST',
+                body: JSON.stringify(getAll.result),
+                headers: {
+                    Accept: 'application/json, text/plain, */*',
+                    'Content-Type': 'application/json'
+                }
+            })
+                .then(response => response.json())
+                .then(serverResponse => {
+                    if (serverResponse.message) {
+                        throw new Error(serverResponse);
+                    }
+
+                    const transaction = db.transaction(['new_transaction'], 'readwrite');
+                    const transactionObjectStore = transaction.objectStore('new_transaction')
+
+                    transactionObjectStore.clear();
+                })
+                .catch(err => {
+                    console.log(err);
+                });
+        }
+    };
 }
 
 window.addEventListener('online', uploadTransaction)
