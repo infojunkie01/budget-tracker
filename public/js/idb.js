@@ -1,13 +1,20 @@
+const indexedDB =
+  window.indexedDB ||
+  window.mozIndexedDB ||
+  window.webkitIndexedDB ||
+  window.msIndexedDB ||
+  window.shimIndexedDB;
+  
 let db;
 const request = indexedDB.open('budget_tracker', 1);
 
-request.onupgradeneeded = function(event) {
-    const db = event.target.result;
-    db.createObjectStore('new_transaction', { auto_increment: true });
-}
+request.onupgradeneeded =  ({ target }) => {
+    let db = target.result;
+    db.createObjectStore('new_transaction', { autoIncrement: true });
+};
 
-request.onsuccess = function(event) {
-    db = event.target.result;
+request.onsuccess =  ({ target }) =>  {
+    db = target.result;
 
     if (navigator.onLine) {
         uploadTransaction();
@@ -35,7 +42,7 @@ function uploadTransaction() {
 
     getAll.onsuccess = function() {
         if (getAll.results.length > 0) {
-            fetch('/api/transactions', {
+            fetch('/api/transaction', {
                 method: 'POST',
                 body: JSON.stringify(getAll.result),
                 headers: {
